@@ -4,9 +4,9 @@
       <div :dir="field.rtl ? 'rtl' : 'ltr'" class="p-2 nova-tree-attach-many">
         <treeselect v-model="selectedValues"
             :id="field.name"
-            :multiple="true"
+            :multiple="field.multiple"
             :options="field.options"
-            :flat="true"
+            :flat="field.flatten"
             :searchable="field.searchable"
             :always-open="field.alwaysOpen"
             :disabled="field.disabled"
@@ -17,9 +17,6 @@
             :normalizer="normalizer"
         />
       </div>
-      <help-text class="error-text mt-2 text-danger" v-if="hasErrors">
-        {{ firstError }}
-      </help-text>
     </template>
   </default-field>
 </template>
@@ -39,7 +36,7 @@ export default {
   data()
   {
     return {
-      selectedValues: [],
+      selectedValues: null,
     };
   },
   methods: {
@@ -48,7 +45,12 @@ export default {
       return {
         id: node[this.field.idKey],
         label: node[this.field.labelKey],
-        children: node[this.field.childrenKey].length > 0 ? node[this.field.childrenKey] : false
+        isDisabled: node.hasOwnProperty(this.field.activeKey)
+            && node[this.field.activeKey] === this.field.isActiveFalse,
+        children: node.hasOwnProperty(this.field.childrenKey)
+            && node[this.field.childrenKey].length > 0
+            ? node[this.field.childrenKey]
+            : false
       }
     },
     setInitialValue()
@@ -58,24 +60,42 @@ export default {
 
       if( this.resourceId )
       {
-        Nova.request( baseUrl + this.resourceName + '/' + this.resourceId + '/attached/' + this.field.attribute )
-            .then( ( data ) =>
-            {
-              this.selectedValues = data.data || [];
+        const url = [
+            baseUrl + this.resourceName,
+            this.resourceId,
+            'attached',
+            this.field.attribute,
+            this.field.idKey
+        ];
+
+        Nova.request( url.join('/') )
+            .then( ( data ) => {
+
+                if(!this.field.multiple)
+                {
+                    this.selectedValues = data.data || undefined;
+                }
+                else
+                {
+                    this.selectedValues = data.data || [];
+                }
             } );
+      }
+      else
+      {
+          if(!this.field.multiple)
+          {
+              this.selectedValues = undefined;
+          }
+          else
+          {
+              this.selectedValues = [];
+          }
       }
     },
     fill( formData )
     {
       formData.append( this.field.attribute, JSON.stringify( this.selectedValues ) )
-    },
-  },
-  computed:{
-    hasErrors: function() {
-      return this.errors.errors.hasOwnProperty(this.field.attribute);
-    },
-    firstError: function() {
-      return this.errors.errors[this.field.attribute][0]
     },
   }
 }
