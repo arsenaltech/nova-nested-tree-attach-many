@@ -2,10 +2,15 @@
 
 namespace PhoenixLib\NovaNestedTreeAttachMany;
 
+use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Laravel\Nova\Authorizable;
 use Laravel\Nova\Fields\Field;
 use Laravel\Nova\Fields\ResourceRelationshipGuesser;
+use Laravel\Nova\Http\Requests\NovaRequest;
+use PhoenixLib\NovaNestedTreeAttachMany\Domain\Relation\RelationHandlerFactory;
+use PhoenixLib\NovaNestedTreeAttachMany\Rules\ArrayRules;
 
 class NestedTreeAttachManyField extends Field
 {
@@ -16,8 +21,6 @@ class NestedTreeAttachManyField extends Field
     private $manyToManyRelationship;
 
     public $component = 'nova-nested-tree-attach-many';
-
-    public $showOnDetail = false;
 
     public $showOnIndex = false;
 
@@ -36,11 +39,14 @@ class NestedTreeAttachManyField extends Field
         $this->fillUsing(function($request, $model, $attribute, $requestAttribute) use($resource) {
             if(is_subclass_of($model, 'Illuminate\Database\Eloquent\Model')) {
                 $model::saved(function($model) use($attribute, $request) {
-                    $model->{$attribute}()->sync(
-                        json_decode($request->{$attribute}, true)
-                    );
-                });
 
+                    $factory = App::make(RelationHandlerFactory::class);
+
+                    $handler = $factory->make($model->{$attribute}());
+
+                    $handler->attach($model, $attribute, json_decode($request->{$attribute}, true));
+
+                });
                 unset($request->{$attribute});
             }
         });
@@ -49,27 +55,42 @@ class NestedTreeAttachManyField extends Field
             'idKey'             => 'id',
             'labelKey'          => 'name',
             'childrenKey'       => 'children',
+            'activeKey'         => 'is_active',
             'multiple'          => true,
-            'flat'               => true,
+            'flatten'            => true,
             'searchable'        => true,
-            'placeholder'       => __("Select Category"),
+            'placeholder'       => __('Select Category'),
             'alwaysOpen'        => true,
-            'sortValueBy'       => "LEVEL",
+            'sortValueBy'       => 'LEVEL',
             'disabled'          => false,
             'rtl'               => false,
             'maxHeight'         => 500,
+            'isActiveFalse'     => false
         ]);
 
-        $tree = $this->resourceClass::newModel()::get()
-            ->toTree();
+        /** @var Domain\Cache\Cache $requestCache */
+        $forRequestCache = App::make(Domain\Cache\Cache::class);
 
-        $this->withMeta(['options' => $tree]);
+        $tag = get_class($this->resourceClass::newModel());
+
+        if(!$forRequestCache->has($tag))
+        {
+            $query = $this->resourceClass::buildIndexQuery(
+                App::make(NovaRequest::class), $this->resourceClass::newModel()->newQuery()
+            );
+
+            $forRequestCache->put($tag, $query->get()->toTree());
+        }
+
+        $this->withMeta([
+            'options' => $forRequestCache->get($tag)
+        ]);
     }
 
     public function searchable(bool $searchable): NestedTreeAttachManyField
     {
         $this->withMeta([
-            "searchable" => $searchable,
+            'searchable' => $searchable,
         ]);
 
         return $this;
@@ -78,7 +99,7 @@ class NestedTreeAttachManyField extends Field
     public function withIdKey(string $idKey = 'id'): NestedTreeAttachManyField
     {
         $this->withMeta([
-            "idKey" => $idKey,
+            'idKey' => $idKey,
         ]);
 
         return $this;
@@ -87,7 +108,7 @@ class NestedTreeAttachManyField extends Field
     public function withLabelKey(string $labelKey = 'name'): NestedTreeAttachManyField
     {
         $this->withMeta([
-            "labelKey" => $labelKey,
+            'labelKey' => $labelKey,
         ]);
 
         return $this;
@@ -96,16 +117,26 @@ class NestedTreeAttachManyField extends Field
     public function withChildrenKey(string $childrenKey): NestedTreeAttachManyField
     {
         $this->withMeta([
-            "childrenKey" => $childrenKey,
+            'childrenKey' => $childrenKey,
         ]);
 
         return $this;
     }
 
+    public function withActiveKey(string $activeKey): NestedTreeAttachManyField
+    {
+        $this->withMeta([
+            'activeKey' => $activeKey,
+        ]);
+
+        return $this;
+    }
+
+
     public function withPlaceholder(string $placeholder): NestedTreeAttachManyField
     {
         $this->withMeta([
-            "placeholder" => $placeholder,
+            'placeholder' => $placeholder,
         ]);
 
         return $this;
@@ -114,7 +145,7 @@ class NestedTreeAttachManyField extends Field
     public function withMaxHeight(int $maxHeight): NestedTreeAttachManyField
     {
         $this->withMeta([
-            "maxHeight" => $maxHeight,
+            'maxHeight' => $maxHeight,
         ]);
 
         return $this;
@@ -123,7 +154,7 @@ class NestedTreeAttachManyField extends Field
     public function withAlwaysOpen(bool $alwaysOpen): NestedTreeAttachManyField
     {
         $this->withMeta([
-            "alwaysOpen" => $alwaysOpen,
+            'alwaysOpen' => $alwaysOpen,
         ]);
 
         return $this;
@@ -132,7 +163,35 @@ class NestedTreeAttachManyField extends Field
     public function withSortValueBy(string $sortBy): NestedTreeAttachManyField
     {
         $this->withMeta([
-            "sortValueBy" => $sortBy,
+            'sortValueBy' => $sortBy,
+        ]);
+
+        return $this;
+    }
+
+    public function withFlatten(bool $flatten): NestedTreeAttachManyField
+    {
+        $this->withMeta([
+            'flatten' => $flatten,
+        ]);
+
+        return $this;
+    }
+
+    public function isActiveFalseValue( $value = false ): NestedTreeAttachManyField
+    {
+        $this->withMeta([
+            'isActiveFalse' => $value,
+        ]);
+
+        return $this;
+    }
+
+    public function useSingleSelect(): NestedTreeAttachManyField
+    {
+        $this->withMeta([
+            'multiple' => false,
+            'flatten' => false
         ]);
 
         return $this;
@@ -151,5 +210,14 @@ class NestedTreeAttachManyField extends Field
         return call_user_func([ $this->resourceClass, 'authorizedToViewAny'], $request)
             && $request->newResource()->authorizedToAttachAny($request, $this->resourceClass::newModel())
             && parent::authorize($request);
+    }
+
+    public function rules($rules)
+    {
+        $rules = ($rules instanceof Rule || is_string($rules)) ? func_get_args() : (array)$rules;
+
+        $this->rules = [ new ArrayRules($rules) ];
+
+        return $this;
     }
 }
