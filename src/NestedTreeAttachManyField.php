@@ -96,6 +96,15 @@ class NestedTreeAttachManyField extends Field
         return $this;
     }
 
+    public function displayPath(bool $displayPath = false): NestedTreeAttachManyField
+    {
+        $this->withMeta([
+            'displayPath' => $displayPath,
+        ]);
+
+        return $this;
+    }
+
     public function withIdKey(string $idKey = 'id'): NestedTreeAttachManyField
     {
         $this->withMeta([
