@@ -3,8 +3,7 @@
     <template slot="value">
       <div v-for="(value, index) in field.value" :style="{
         'marginTop': index === 0 ? '0' : '6px'
-      }">
-        {{ value[field.labelKey] }}
+      }" v-html="value[field.labelKey]">
       </div>
     </template>
   </panel-item>
