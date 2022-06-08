@@ -28,14 +28,14 @@ class NestedTreeController extends Controller
     public function getCategoryFullPath(\Laravel\Nova\Http\Requests\NovaRequest $request){
         $categories = $request->input('categories');
         $urls = [];
-        if ($categories){
-            foreach ($categories as $key => $value){
-                $category = Category::with(["stores" => function($q){
-                    return $q->select('store_name');
-                }])->where("category.category_id",$value)->first();
-                $category_tree = "[ " . $category->categoryBreadcrumb() . " ]";
-                $stores = implode(' | ',array_column($category->stores->toArray(), 'store_name'));
-                $urls[$category["category_id"]] = [html_entity_decode($category["category_name"]),html_entity_decode($category_tree) .' | '.html_entity_decode($stores)];
+        if (is_array($categories) && count($categories) > 0){
+            $category = Category::with(["stores" => function($q){
+                return $q->select('store_name');
+            }])->whereIn("category.category_id",$categories)->get();
+            foreach ($category as $key => $value){
+                $category_tree = "[ " . $value->categoryBreadcrumb() . " ]";
+                $stores = implode(' | ',array_column($value->stores->toArray(), 'store_name'));
+                $urls[$value["category_id"]] = [html_entity_decode($value["category_name"]),html_entity_decode($category_tree) .' | '.html_entity_decode($stores)];
             }
         }
         return $urls;
