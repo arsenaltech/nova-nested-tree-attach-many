@@ -60,9 +60,14 @@ export default {
     };
   },
   watch: {
-    selectedValues: function(val) {
+    selectedValues: function(val,old) {
       //do something when the data changes.
-      if (val) {
+      let diff = [],diff_reverse = [];
+      if(old != null){
+        diff = val.filter(x => old.indexOf(x) === -1);
+        diff_reverse = old.filter(x => val.indexOf(x) === -1);
+      }
+      if (val && (diff.length > 0 || diff_reverse.length > 0)) {
         this.getCategoryFullPath(val);
       }
     }
@@ -77,17 +82,17 @@ export default {
         return val;
       });
     },
-    getCategoryFullPath(val){
-      if (this.field.displayPath)
+    getCategoryFullPath(){
+      if (this.field.displayPath && this.selectedValues != null && this.selectedValues.length > 0)
       {
         Nova.request().get('/nova-vendor/nova-nested-tree-attach-many/get-category-full-path',{
           params:{
-            categories: val || this.selectedValues,
+            categories: this.selectedValues,
           }
         })
-        .then( ( data ) => {
-          this.fullUrl = data.data;
-        } );
+            .then( ( data ) => {
+              this.fullUrl = data.data;
+            } );
       }
     },
     normalizer( node )
@@ -97,7 +102,7 @@ export default {
         label: node[this.field.labelKey],
         isDisabled: node.hasOwnProperty(this.field.activeKey) && node[this.field.activeKey] === this.field.isActiveFalse,
         children: node.hasOwnProperty(this.field.childrenKey)
-            && node[this.field.childrenKey].length > 0
+        && node[this.field.childrenKey].length > 0
             ? node[this.field.childrenKey]
             : false
       }
@@ -110,39 +115,38 @@ export default {
       if( this.resourceId )
       {
         const url = [
-            baseUrl + this.resourceName,
-            this.resourceId,
-            'attached',
-            this.field.attribute,
-            this.field.idKey
+          baseUrl + this.resourceName,
+          this.resourceId,
+          'attached',
+          this.field.attribute,
+          this.field.idKey
         ];
 
         Nova.request( url.join('/') )
             .then( ( data ) => {
-
-                if(!this.field.multiple)
-                {
-                    this.selectedValues = data.data || undefined;
-                }
-                else
-                {
-                    this.selectedValues = data.data || [];
-                }
-                if (this.selectedValues.length > 0){
-                  this.getCategoryFullPath(this.selectedValues);
-                }
+              if(!this.field.multiple)
+              {
+                this.selectedValues = data.data || undefined;
+              }
+              else
+              {
+                this.selectedValues = data.data || [];
+              }
+              if(this.selectedValues.length > 0){
+                this.getCategoryFullPath(this.selectedValues);
+              }
             } );
       }
       else
       {
-          if(!this.field.multiple)
-          {
-              this.selectedValues = undefined;
-          }
-          else
-          {
-              this.selectedValues = [];
-          }
+        if(!this.field.multiple)
+        {
+          this.selectedValues = undefined;
+        }
+        else
+        {
+          this.selectedValues = [];
+        }
       }
     },
     fill( formData )
