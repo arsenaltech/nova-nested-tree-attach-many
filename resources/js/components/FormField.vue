@@ -1,6 +1,6 @@
 <template>
   <default-field :field="field" :errors="errors" :show-help-text="false" class="categories-tree">
-    <template slot="field">
+    <template #field>
       <div class="flex">
         <div :dir="field.rtl ? 'rtl' : 'ltr'" class="w-3/5 nova-tree-attach-many">
           <treeselect v-model="selectedValues"
