@@ -7,6 +7,7 @@
                       :id="field.name"
                       :multiple="field.multiple"
                       :options="field.options"
+                      :flatten-search-results="true"
                       :flat="field.flatten"
                       :searchable="field.searchable"
                       :always-open="field.alwaysOpen"
@@ -17,6 +18,7 @@
                       :value-consists-of="field.valueConsistsOf"
                       :normalizer="normalizer"
                       :disableFuzzyMatching="true"
+                      v-if="renderComponent"
 
           >
             <label slot="option-label" slot-scope="{ node, shouldShowCount, count, labelClassName, countClassName }"
@@ -57,6 +59,7 @@ export default {
     return {
       selectedValues: null,
       fullUrl:null,
+      renderComponent: true,
     };
   },
   watch: {
@@ -73,6 +76,17 @@ export default {
     }
   },
   methods: {
+    forceRerender() {
+      // Remove my-component from the DOM
+      this.renderComponent = false;
+
+      // If you like promises better you can
+      // also use nextTick this way
+      this.$nextTick().then(() => {
+        // Add the component back in
+        this.renderComponent = true;
+      });
+    },
     decodeCategoryName(options,self){
       return options.filter(function (val) {
         val['category_name'] = _.unescape(val['category_name']);
@@ -132,6 +146,7 @@ export default {
               {
                 this.selectedValues = data.data || [];
               }
+              this.forceRerender();
               if(this.selectedValues.length > 0){
                 this.getCategoryFullPath(this.selectedValues);
               }
