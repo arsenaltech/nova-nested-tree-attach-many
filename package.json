@@ -18,12 +18,13 @@
         "lodash": "^4.17.21",
         "postcss": "^8.3.11",
         "resolve-url-loader": "^5.0.0",
-        "sass": "^1.56.2",
-        "sass-loader": "^12.6.0",
-        "vue-loader": "^16.8.3"
+        "sass": "^1.32.8",
+        "sass-loader": "10.*",
+        "vue-loader": "^17.0.1"
     },
     "dependencies": {
-        "@riophae/vue-treeselect": "^0.4.0",
-        "cross-env": "^7.0.3"
+        "cross-env": "^7.0.3",
+        "vue": "^3.2.45",
+        "vue3-treeselect": "^0.1.10"
     }
 }
