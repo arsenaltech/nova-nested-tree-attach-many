@@ -2,7 +2,7 @@
   <default-field :field="field" :errors="errors" :show-help-text="false" class="categories-tree">
     <template #field>
       <div class="flex">
-        <div :dir="field.rtl ? 'rtl' : 'ltr'" class="w-3/5 nova-tree-attach-many">
+        <div :dir="field.rtl ? 'rtl' : 'ltr'" class="w-2/5 nova-tree-attach-many">
           <treeselect v-model="selectedValues"
                       :id="field.name"
                       :multiple="field.multiple"
@@ -27,7 +27,7 @@
             </label>
           </treeselect>
         </div>
-        <div class="w-2/5 pl-8 pt-2" v-if="field.displayPath && fullUrl">
+        <div class="w-3/5 pl-8 pt-2" v-if="field.displayPath && fullUrl">
           <ul class="category-list pl-6">
             <li class="py-1 text-80 text-sm capitalize" v-for="(url,index) in fullUrl" :key="index"><strong>{{ url[0] }}</strong> {{ url[1] }}</li>
           </ul>
