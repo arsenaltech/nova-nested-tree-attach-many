@@ -1,6 +1,6 @@
 <template>
   <panel-item :field="field">
-    <template slot="value">
+    <template #value>
       <div v-for="(value, index) in field.value" :style="{
         'marginTop': index === 0 ? '0' : '6px'
       }" v-html="value[field.labelKey]">
