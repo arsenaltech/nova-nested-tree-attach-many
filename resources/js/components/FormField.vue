@@ -73,6 +73,7 @@ export default {
       if (val && (diff.length > 0 || diff_reverse.length > 0)) {
         this.getCategoryFullPath(val);
       }
+      Nova.$emit('selectedCategory',val)
     }
   },
   methods: {
