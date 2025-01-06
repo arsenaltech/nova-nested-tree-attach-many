@@ -29,7 +29,7 @@ class NestedTreeController extends Controller
         $categories = $request->input('categories');
         $urls = [];
         if (is_array($categories) && count($categories) > 0){
-            $category = Category::with(["stores" => function($q){
+            $category = Category::with(["parent","stores" => function($q){
                 return $q->select('store_name');
             }])->whereIn("category.category_id",$categories)->get();
             foreach ($category as $key => $value){
